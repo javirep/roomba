@@ -1,0 +1,7 @@
+.settings-container{
+    margin-bottom: 10px;
+}
+
+.settings-container > div:not(:last-child) {
+    margin-bottom: 4px;
+}

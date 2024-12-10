@@ -1,86 +1,168 @@
+import { useSettings } from '../../provider/SettingsProvider';
 import { Cell } from '../Cell/Cell';
-import './grid.css';
-import { useState } from 'react';
+import { Commands } from '../Commands/Commands';
+import './Grid.css';
+import { useEffect, useState } from 'react';
 
 export const Grid = () => {
+    const { numCols, numRows, settingWalls } = useSettings();
 
-    const [numRows, setNumRows] = useState(10);
-    const [numCols, setNumCols] = useState(10);
-    const [roombaPosition, setRoombaPosition] = useState({ x: 0, y: 0 });
-    const [roombaDirection, setRoombaDirection] = useState('N');
+    const emptyCell = 'O';
+    const wallCell = 'wall';
 
-    const handleRotate = () => {
+    const [ grid, setGrid ] = useState([ ...Array(numCols) ].map(() => [ ...Array(numRows) ].map(() => emptyCell)));
+    const [ roombaPosition, setRoombaPosition ] = useState({ x: 0, y: 0 });
+    const [ roombaDirection, setRoombaDirection ] = useState('N');
+
+    useEffect(() => {
+        if (numCols === 0 || numRows === 0) return;
+        
+        let newGrid = [ ...grid ];
+
+        if (numCols > newGrid.length) {
+            for (let i = newGrid.length; i < numCols; i++) {
+                newGrid.push([ ...Array(numRows) ]);
+            }
+        }
+
+        if (numCols < newGrid.length) {
+            for (let i = newGrid.length; i > numCols; i--) {
+                newGrid.pop();
+            }
+        }
+
+        if (numRows > newGrid[0].length) {
+            for (let i = 0; i < newGrid.length; i++) {
+                for (let j = newGrid[i].length; j < numRows; j++) {
+                    newGrid[i].push(undefined);
+                }
+            }
+        }
+
+        if (numRows < newGrid[0].length) {
+            for (let i = 0; i < newGrid.length; i++) {
+                for (let j = newGrid[i].length; j > numRows; j--) {
+                    newGrid[i].pop();
+                }
+            }
+        }
+
+        if (newGrid[roombaPosition.x] === undefined || newGrid[roombaPosition.x][roombaPosition.y] === undefined) {
+            setRoombaPosition({ x: 0, y: 0 });
+        }
+
+        setGrid(newGrid);
+        }, [numCols, numRows]);
+
+    useEffect(() => {
+        document.addEventListener('keydown', handleKeyDown);
+        return () => document.removeEventListener('keydown', handleKeyDown);
+    }, [roombaPosition, roombaDirection]);
+
+    const commands = [
+        {
+            text: 'Move Forward',
+            onClick: handleMove
+        },
+        {
+            text: 'Turn Right',
+            onClick: () => handleRotate('R')
+        },
+        {
+            text: 'Turn Left',
+            onClick: () => handleRotate('L')
+        }
+    ]
+
+    function handleRotate (direction = 'R') {
         switch (roombaDirection) {
             case 'N':
-                setRoombaDirection('E');
+                if (direction == 'L') setRoombaDirection('W');
+                if (direction == 'R') setRoombaDirection('E');
                 break;
             case 'E':
-                setRoombaDirection('S');
-                break;
+                if (direction == 'L') setRoombaDirection('N');
+                if (direction == 'R') setRoombaDirection('S');
+            break;
             case 'S':
-                setRoombaDirection('W');
+                if (direction == 'L') setRoombaDirection('E');
+                if (direction == 'R') setRoombaDirection('W');
                 break;
             case 'W':
-                setRoombaDirection('N');
+                if (direction == 'L') setRoombaDirection('S');
+                if (direction == 'R') setRoombaDirection('N');
                 break;
         }
     }
 
-    const handleMove = () => {
+    function handleMove () {
+
+        let newPosition = { x: roombaPosition.x, y: roombaPosition.y };
+
         switch (roombaDirection) {
             case 'N':
-                if (roombaPosition.y !== 0 ) setRoombaPosition({ x: roombaPosition.x, y: roombaPosition.y - 1 });
-                else handleRotate();
+                newPosition = { x: roombaPosition.x, y: roombaPosition.y - 1 };
                 break;
             case 'E':
-                if(roombaPosition.x !== numCols - 1 ) setRoombaPosition({ x: roombaPosition.x + 1 , y: roombaPosition.y });
-                else handleRotate();
+                newPosition = { x: roombaPosition.x + 1 , y: roombaPosition.y };
                 break;
             case 'S':
-                if(roombaPosition.y !== numRows - 1 ) setRoombaPosition({ x: roombaPosition.x, y: roombaPosition.y + 1 });
-                else handleRotate();
+                newPosition = { x: roombaPosition.x, y: roombaPosition.y + 1 };
                 break;
             case 'W':
-                if(roombaPosition.x !== 0 ) setRoombaPosition({ x: roombaPosition.x - 1, y: roombaPosition.y });
-                else handleRotate();
+                newPosition = { x: roombaPosition.x - 1, y: roombaPosition.y };
                 break;
         }
+
+        const isOffLimits = (
+            grid[newPosition.y] === undefined ||
+            newPosition.x < 0 || 
+            newPosition.x >= grid.length  || 
+            newPosition.y < 0 || 
+            newPosition.y >= grid[newPosition.y].length  ||
+            grid[newPosition.x][newPosition.y] === wallCell
+        )
+
+        if (isOffLimits) return handleRotate('R'); 
+        else setRoombaPosition(newPosition);
     }
 
-    const rows = [];
-    const cols = [];
+    function handleCellOnClick (x, y) {
+        if (!settingWalls) return 
 
-    for (let i = 0; i < numRows; i++) {
-        rows.push(i);
+        let newGrid = [ ...grid ];
+        grid[x][y] === wallCell ? newGrid[x][y] = undefined : newGrid[x][y] = wallCell;
+        setGrid(newGrid);
     }
-    for (let i = 0; i < numCols; i++) {
-        cols.push(i);
+
+    function handleKeyDown (e) {
+        if (e.key === 'ArrowUp') handleMove();
+        if (e.key === 'ArrowRight') handleRotate('R');
+        if (e.key === 'ArrowLeft') handleRotate('L');
     }
 
     return (
         <>
-        <div className="button-container">
-            <button className="button" onClick={()=> handleMove()}>Move Forward</button>
-            <button className="button" onClick={()=> handleRotate()}>Turn Right</button>
-        </div>
-        <div className="Grid">
-            {
-                cols.map((col, rowIndex) => {
-                    return (
-                        <div className="Column" key={rowIndex}>
-                            {
-                                rows.map((row, colIndex) => {
-                                    let hasRoomba = roombaPosition.x === rowIndex && roombaPosition.y === colIndex;
-                                    return (
-                                        <Cell key={colIndex} hasRoomba={hasRoomba} roombaDirection={roombaDirection} />
-                                    );
-                                })
-                            }
-                        </div>
-                    );
-                })
-            }
-        </div>
+            <Commands commands={commands} />
+            <div className="Grid">
+                {
+                    grid.map((col, colIndex) => {
+                        return (
+                            <div className="Column" key={colIndex}>
+                                {
+                                    col.map((cell, rowIndex) => {
+                                        let hasRoomba = roombaPosition.x === colIndex && roombaPosition.y === rowIndex;
+                                        let isWall = grid[colIndex][rowIndex] === wallCell;
+                                        return (
+                                            <Cell key={rowIndex} hasRoomba={hasRoomba} roombaDirection={roombaDirection} isWall={isWall} onClick={()=> handleCellOnClick(colIndex, rowIndex)}/>
+                                        );
+                                    })
+                                }
+                            </div>
+                        );
+                    })
+                }
+            </div>
         </>
     );
 }

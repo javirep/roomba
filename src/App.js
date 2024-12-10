@@ -1,10 +1,13 @@
 import './App.css';
-import { Grid } from './components/grid/grid';
+import { Grid } from './components/Grid/Grid';
+import { useState } from 'react';
+import { Settings } from './components/Settings/Settings';
 
-function App() {
+function App() {  
   return (
     <div className="App">
-      <h1> Shopify Assesment </h1>
+      <h1> Roomba </h1>
+      <Settings />
       <Grid />
     </div>
   );
