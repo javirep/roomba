@@ -1,0 +1,25 @@
+
+.Cell {
+    flex: 1;
+    border: 1px solid black;
+    font-size: 2em;
+    height: 40px;
+    box-sizing: border-box;
+}
+
+.Roomba {
+    width: 100%;
+    height: 100%;
+    transform-origin: 50% 50%;
+    text-align: center;
+}
+
+.Roomba.East {
+    transform: rotate(90deg);
+}
+.Roomba.South {
+    transform: rotate(180deg);
+}
+.Roomba.West {
+    transform: rotate(270deg);
+}

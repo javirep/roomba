@@ -1,0 +1,15 @@
+.Grid {
+    border: 2px solid black;
+    height: 400px;
+    width: 400px;
+    display: inline-flex;
+    flex-direction: row;
+  }
+  
+  .Column {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+  }
+  
+  
